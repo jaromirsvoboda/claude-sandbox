@@ -1,0 +1,20 @@
+version: '3'
+services:
+  claude:
+    build: .
+    volumes:
+      - ${PROJECT_PATH:-./workspace}:/workspace
+      - claude-config:/home/developer/.config
+    ports:
+      - "${PORT1:-3000}:3000"
+      - "${PORT2:-8080}:8080"
+      - "${PORT3:-5000}:5000"
+    environment:
+      - PROJECT_NAME=${PROJECT_NAME:-default}
+    stdin_open: true
+    tty: true
+    user: developer
+    container_name: claude-${PROJECT_NAME:-default}
+
+volumes:
+  claude-config:

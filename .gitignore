@@ -1,0 +1,12 @@
+# Environment files
+.env
+
+# Docker
+.docker/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
