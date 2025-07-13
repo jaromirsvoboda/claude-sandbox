@@ -5,6 +5,7 @@ Centralized Docker setup for running Claude Code safely in isolation while worki
 ## Setup
 
 1. Build the container (one time):
+
 ```powershell
 cd c:\Projects\claude-sandbox
 docker-compose build
@@ -12,21 +13,21 @@ docker-compose build
 
 ## Usage
 
-### Method 1: Using .env file (Recommended)
+### Simple CLI approach (Recommended)
+
 ```powershell
-cd c:\Projects\claude-sandbox
-cp .env.example .env
-# Edit .env to set your project path and name
-docker-compose up -d
-docker-compose exec claude claude
+# Basic usage
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper"
+
+# With custom project name
+.\run-claude.ps1 -ProjectPath "C:\Projects\my-app" -ProjectName "my-app"
+
+# With custom ports
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Port1 3001 -Port2 8081 -Port3 5001
 ```
 
-### Method 2: Using PowerShell script
-```powershell
-c:\Projects\claude-sandbox\claude-start.ps1 -ProjectPath "C:/Projects/your-project"
-```
+### Old Docker Compose method (still works)
 
-### Method 3: Using environment variables
 ```powershell
 cd c:\Projects\claude-sandbox
 $env:PROJECT_PATH="C:/Projects/your-project"
@@ -38,36 +39,27 @@ docker-compose exec claude claude
 ## Managing the Container
 
 ```powershell
-# Stop the container
-docker-compose stop
+# Stop any running containers
+docker ps -a --filter "name=claude-*" --format "table {{.Names}}\t{{.Status}}"
 
-# Start it again (auth persists)
-docker-compose start
+# Stop specific container
+docker stop claude-piper
 
-# Remove container (keeps auth volume)
-docker-compose down
-
-# Remove everything including auth
-docker-compose down -v
+# Remove specific container
+docker rm claude-piper
 
 # View logs
-docker-compose logs -f
+docker logs claude-piper
 ```
 
 ## Multiple Projects
 
-To work on multiple projects simultaneously, use different project names and ports:
+Work on multiple projects simultaneously with different ports:
 
 ```powershell
 # Project 1
-$env:PROJECT_PATH="C:/Projects/app1"
-$env:PROJECT_NAME="app1"
-$env:PORT1="3000"
-docker-compose up -d
+.\run-claude.ps1 -ProjectPath "C:\Projects\app1" -ProjectName "app1" -Port1 3000
 
-# Project 2 (in different terminal)
-$env:PROJECT_PATH="C:/Projects/app2"
-$env:PROJECT_NAME="app2"
-$env:PORT1="3001"
-docker-compose up -d
+# Project 2 (different ports)
+.\run-claude.ps1 -ProjectPath "C:\Projects\app2" -ProjectName "app2" -Port1 3001
 ```

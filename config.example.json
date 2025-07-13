@@ -1,0 +1,22 @@
+{
+  "_comment": "Claude Sandbox Configuration - Copy this file to config.json and customize your projects",
+  "projects": {
+    "piper": {
+      "path": "C:/Projects/piper",
+      "ports": {
+        "web": 3000,
+        "api": 8080,
+        "dev": 5000
+      }
+    },
+    "my-app": {
+      "path": "C:/Projects/my-app",
+      "ports": {
+        "web": 3001,
+        "api": 8081,
+        "dev": 5001
+      }
+    }
+  },
+  "default_project": "piper"
+}
