@@ -3,11 +3,10 @@ param(
     [string]$ProjectPath,
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
-    [int]$Port1 = 3000,
-    [int]$Port2 = 8080,
-    [int]$Port3 = 5000,
     [switch]$Resume
-)# Convert Windows path to WSL/Docker format
+)
+
+# Convert Windows path to WSL/Docker format
 $ProjectPath = $ProjectPath -replace '\\', '/' -replace '^([A-Z]):', '/c'
 
 # Check if Docker image exists, build if not
@@ -17,9 +16,8 @@ if (-not $imageExists) {
     docker build -t claude-sandbox-claude .
 }
 
-Write-Host "Starting Claude sandbox for: $ProjectName"
+Write-Host "Starting Claude sandbox for: $ProjectName (no ports)"
 Write-Host "Project path: $ProjectPath"
-Write-Host "Ports: $Port1, $Port2, $Port3"
 
 # Check if .claude directory exists for session resumption
 $claudeArgs = "claude"
@@ -29,11 +27,8 @@ if ($Resume -or (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\'
 }
 
 docker run -it --rm `
-    --name "claude-$ProjectName" `
+    --name "claude-$ProjectName-noports" `
     -v "${ProjectPath}:/workspace" `
     -v "claude-config:/home/developer/.config" `
-    -p "${Port1}:3000" `
-    -p "${Port2}:8080" `
-    -p "${Port3}:5000" `
     claude-sandbox-claude `
     bash -c $claudeArgs

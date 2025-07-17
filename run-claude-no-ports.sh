@@ -1,11 +1,13 @@
 #!/bin/bash
 
-# Usage: ./run-claude.sh /path/to/project [project-name] [--resume]
+# Usage: ./run-claude-no-ports.sh /path/to/project [project-name] [--resume]
+# This version doesn't expose any ports to avoid Windows/WSL port conflicts
 
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <project-path> [project-name] [--resume]"
-    echo "Example: $0 /c/Projects/piper piper"
-    echo "         $0 /c/Projects/piper piper --resume"
+    echo "Example: $0 /mnt/c/Projects/piper"
+    echo "         $0 /mnt/c/Projects/piper piper --resume"
+    echo "Note: No ports exposed - use for file editing only"
     exit 1
 fi
 
@@ -19,7 +21,7 @@ if ! docker image inspect claude-sandbox-claude >/dev/null 2>&1; then
     docker build -t claude-sandbox-claude .
 fi
 
-echo "Starting Claude sandbox for: $PROJECT_NAME"
+echo "Starting Claude sandbox for: $PROJECT_NAME (no ports)"
 echo "Project path: $PROJECT_PATH"
 
 # Check if .claude directory exists for session resumption
@@ -30,11 +32,8 @@ if [ "$RESUME_FLAG" = "--resume" ] || [ -d "$PROJECT_PATH/.claude" ]; then
 fi
 
 docker run -it --rm \
-    --name "claude-$PROJECT_NAME" \
+    --name "claude-$PROJECT_NAME-noports" \
     -v "$PROJECT_PATH:/workspace" \
     -v claude-config:/home/developer/.config \
-    -p 3001:3000 \
-    -p 8081:8080 \
-    -p 5001:5000 \
     claude-sandbox-claude \
     bash -c "$CLAUDE_CMD"
