@@ -1,19 +1,20 @@
 #!/bin/bash
 
-# Usage: ./run-claude-no-ports.sh /path/to/project [project-name] [--resume]
+# Usage: ./run-claude-no-ports.sh /path/to/project [project-name] [--fresh]
 # This version doesn't expose any ports to avoid Windows/WSL port conflicts
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <project-path> [project-name] [--resume]"
+    echo "Usage: $0 <project-path> [project-name] [--fresh]"
     echo "Example: $0 /mnt/c/Projects/piper"
-    echo "         $0 /mnt/c/Projects/piper piper --resume"
+    echo "         $0 /mnt/c/Projects/piper piper --fresh"
+    echo "Note: Resumes previous session by default if .claude directory exists"
     echo "Note: No ports exposed - use for file editing only"
     exit 1
 fi
 
 PROJECT_PATH="$1"
 PROJECT_NAME="${2:-$(basename "$PROJECT_PATH")}"
-RESUME_FLAG="$3"
+FRESH_FLAG="$3"
 
 # Check if Docker image exists, build if not
 if ! docker image inspect claude-sandbox-claude >/dev/null 2>&1; then
@@ -26,9 +27,11 @@ echo "Project path: $PROJECT_PATH"
 
 # Check if .claude directory exists for session resumption
 CLAUDE_CMD="claude"
-if [ "$RESUME_FLAG" = "--resume" ] || [ -d "$PROJECT_PATH/.claude" ]; then
+if [ "$FRESH_FLAG" != "--fresh" ] && [ -d "$PROJECT_PATH/.claude" ]; then
     CLAUDE_CMD="claude --resume"
     echo "Resuming previous Claude session..."
+else
+    echo "Starting fresh Claude session..."
 fi
 
 docker run -it --rm \

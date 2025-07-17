@@ -17,11 +17,11 @@ docker-compose build
 
 **PowerShell (Windows):**
 ```powershell
-# Auto-builds image if needed
+# Auto-builds image if needed (resumes automatically if .claude exists)
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper"
 
-# Resume previous session (if .claude directory exists)
-.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Resume
+# Start fresh session (ignore existing .claude directory)
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Fresh
 
 # With custom project name
 .\run-claude.ps1 -ProjectPath "C:\Projects\my-app" -ProjectName "my-app"
@@ -29,29 +29,29 @@ docker-compose build
 # With custom ports
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Port1 3001 -Port2 8081 -Port3 5001
 
-# No ports version
+# No ports version (resumes automatically if .claude exists)
 .\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper"
 
-# No ports version with resume
-.\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper" -Resume
+# No ports version with fresh start
+.\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper" -Fresh
 ```
 
 **Bash (Linux/WSL/Git Bash):**
 ```bash
-# Auto-builds image if needed
+# Auto-builds image if needed (resumes automatically if .claude exists)
 ./run-claude.sh /mnt/c/Projects/piper
 
-# Resume previous session (if .claude directory exists)
-./run-claude.sh /mnt/c/Projects/piper piper --resume
+# Start fresh session (ignore existing .claude directory)
+./run-claude.sh /mnt/c/Projects/piper piper --fresh
 
 # With custom project name
 ./run-claude.sh /mnt/c/Projects/my-app my-app
 
-# No ports version (avoids WSL port conflicts)
+# No ports version (resumes automatically if .claude exists)
 ./run-claude-no-ports.sh /mnt/c/Projects/piper
 
-# No ports version with resume
-./run-claude-no-ports.sh /mnt/c/Projects/piper piper --resume
+# No ports version with fresh start
+./run-claude-no-ports.sh /mnt/c/Projects/piper piper --fresh
 
 # Note: For WSL, use /mnt/c/ path format
 # For Git Bash, use /c/ path format
@@ -71,8 +71,8 @@ docker-compose exec claude claude
 
 Claude Code automatically saves your conversation context in a `.claude` directory in your project. The scripts will:
 
-- **Auto-resume** if a `.claude` directory exists in your project
-- **Manual resume** with the `-Resume` flag (PowerShell) or `--resume` flag (Bash)
+- **Auto-resume by default** if a `.claude` directory exists in your project
+- **Start fresh** with the `-Fresh` flag (PowerShell) or `--fresh` flag (Bash)
 
 ```powershell
 # First run - starts fresh
@@ -80,6 +80,9 @@ Claude Code automatically saves your conversation context in a `.claude` directo
 
 # Subsequent runs - automatically resumes from previous session
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper"
+
+# Force fresh start (ignore existing session)
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Fresh
 ```
 
 To start fresh (ignore existing session):

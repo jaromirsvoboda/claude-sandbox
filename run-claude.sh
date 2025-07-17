@@ -1,17 +1,18 @@
 #!/bin/bash
 
-# Usage: ./run-claude.sh /path/to/project [project-name] [--resume]
+# Usage: ./run-claude.sh /path/to/project [project-name] [--fresh]
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <project-path> [project-name] [--resume]"
+    echo "Usage: $0 <project-path> [project-name] [--fresh]"
     echo "Example: $0 /c/Projects/piper piper"
-    echo "         $0 /c/Projects/piper piper --resume"
+    echo "         $0 /c/Projects/piper piper --fresh"
+    echo "Note: Resumes previous session by default if .claude directory exists"
     exit 1
 fi
 
 PROJECT_PATH="$1"
 PROJECT_NAME="${2:-$(basename "$PROJECT_PATH")}"
-RESUME_FLAG="$3"
+FRESH_FLAG="$3"
 
 # Check if Docker image exists, build if not
 if ! docker image inspect claude-sandbox-claude >/dev/null 2>&1; then
@@ -24,9 +25,11 @@ echo "Project path: $PROJECT_PATH"
 
 # Check if .claude directory exists for session resumption
 CLAUDE_CMD="claude"
-if [ "$RESUME_FLAG" = "--resume" ] || [ -d "$PROJECT_PATH/.claude" ]; then
+if [ "$FRESH_FLAG" != "--fresh" ] && [ -d "$PROJECT_PATH/.claude" ]; then
     CLAUDE_CMD="claude --resume"
     echo "Resuming previous Claude session..."
+else
+    echo "Starting fresh Claude session..."
 fi
 
 docker run -it --rm \

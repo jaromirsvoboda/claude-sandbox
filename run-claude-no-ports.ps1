@@ -3,7 +3,7 @@ param(
     [string]$ProjectPath,
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
-    [switch]$Resume
+    [switch]$Fresh
 )
 
 # Convert Windows path to WSL/Docker format
@@ -21,9 +21,11 @@ Write-Host "Project path: $ProjectPath"
 
 # Check if .claude directory exists for session resumption
 $claudeArgs = "claude"
-if ($Resume -or (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude")) {
+if (-not $Fresh -and (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude")) {
     $claudeArgs = "claude --resume"
     Write-Host "Resuming previous Claude session..."
+} else {
+    Write-Host "Starting fresh Claude session..."
 }
 
 docker run -it --rm `
