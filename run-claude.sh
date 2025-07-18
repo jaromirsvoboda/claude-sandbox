@@ -26,8 +26,8 @@ echo "Project path: $PROJECT_PATH"
 # Check if .claude directory exists for session resumption
 CLAUDE_CMD="claude"
 if [ "$FRESH_FLAG" != "--fresh" ] && [ -d "$PROJECT_PATH/.claude" ]; then
-    CLAUDE_CMD="claude --resume"
-    echo "Resuming previous Claude session..."
+    CLAUDE_CMD="claude --continue || claude"
+    echo "Attempting to resume previous Claude session (will start fresh if no conversation found)..."
 else
     echo "Starting fresh Claude session..."
 fi
@@ -35,7 +35,7 @@ fi
 docker run -it --rm \
     --name "claude-$PROJECT_NAME" \
     -v "$PROJECT_PATH:/workspace" \
-    -v claude-config:/home/developer/.config \
+    -v claude-config:/home/developer \
     -p 3001:3000 \
     -p 8081:8080 \
     -p 5001:5000 \

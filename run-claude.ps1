@@ -24,8 +24,8 @@ Write-Host "Ports: $Port1, $Port2, $Port3"
 # Check if .claude directory exists for session resumption
 $claudeArgs = "claude"
 if (-not $Fresh -and (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude")) {
-    $claudeArgs = "claude --resume"
-    Write-Host "Resuming previous Claude session..."
+    $claudeArgs = "claude --continue || claude"
+    Write-Host "Attempting to resume previous Claude session (will start fresh if no conversation found)..."
 } else {
     Write-Host "Starting fresh Claude session..."
 }
@@ -33,7 +33,7 @@ if (-not $Fresh -and (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/'
 docker run -it --rm `
     --name "claude-$ProjectName" `
     -v "${ProjectPath}:/workspace" `
-    -v "claude-config:/home/developer/.config" `
+    -v "claude-config:/home/developer" `
     -p "${Port1}:3000" `
     -p "${Port2}:8080" `
     -p "${Port3}:5000" `

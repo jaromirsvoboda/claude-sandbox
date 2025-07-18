@@ -71,17 +71,18 @@ docker-compose exec claude claude
 
 Claude Code automatically saves your conversation context in a `.claude` directory in your project. The scripts will:
 
-- **Auto-resume by default** if a `.claude` directory exists in your project
+- **Auto-resume by default** if a `.claude` directory exists and contains conversation history
+- **Fall back to fresh start** if `.claude` exists but has no conversations to resume
 - **Start fresh** with the `-Fresh` flag (PowerShell) or `--fresh` flag (Bash)
 
 ```powershell
 # First run - starts fresh
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper"
 
-# Subsequent runs - automatically resumes from previous session
+# Subsequent runs - attempts to resume, falls back to fresh if no conversations found
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper"
 
-# Force fresh start (ignore existing session)
+# Force fresh start (ignore existing session completely)
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Fresh
 ```
 
@@ -143,3 +144,24 @@ netstat -ano | findstr :3000
 # No port forwarding (avoids WSL networking issues)
 ./run-claude-no-ports.sh /mnt/c/Projects/piper
 ```
+
+### Authentication Issues
+
+**Frequent re-authentication:** Claude Code should cache authentication in the `claude-config` Docker volume. If you're being asked to authenticate every time:
+
+1. **Check if volume persists:**
+   ```powershell
+   docker volume ls | findstr claude-config
+   ```
+
+2. **Check if auth data is being saved:**
+   ```powershell
+   docker run --rm -v claude-config:/config busybox ls -la /config
+   ```
+
+3. **Reset authentication cache:**
+   ```powershell
+   docker volume rm claude-config
+   ```
+
+4. **Ensure consistent container naming:** The scripts use consistent names (`claude-<project>`) to maintain the same volume across runs.
