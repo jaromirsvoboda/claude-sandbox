@@ -6,7 +6,8 @@ param(
     [int]$Port1 = 3000,
     [int]$Port2 = 8080,
     [int]$Port3 = 5000,
-    [switch]$Fresh
+    [switch]$Fresh,
+    [switch]$SelectConversation
 )# Convert Windows path to WSL/Docker format
 $ProjectPath = $ProjectPath -replace '\\', '/' -replace '^([A-Z]):', '/c'
 
@@ -23,7 +24,12 @@ Write-Host "Ports: $Port1, $Port2, $Port3"
 
 # Check if .claude directory exists for session resumption
 $claudeArgs = "claude"
-if (-not $Fresh -and (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude")) {
+if ($Fresh) {
+    Write-Host "Starting fresh Claude session..."
+} elseif ($SelectConversation -and (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude")) {
+    $claudeArgs = "claude --resume"
+    Write-Host "Opening conversation selection menu..."
+} elseif (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude") {
     $claudeArgs = "claude --continue || claude"
     Write-Host "Attempting to resume previous Claude session (will start fresh if no conversation found)..."
 } else {

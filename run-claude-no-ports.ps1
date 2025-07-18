@@ -3,7 +3,8 @@ param(
     [string]$ProjectPath,
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
-    [switch]$Fresh
+    [switch]$Fresh,
+    [switch]$SelectConversation
 )
 
 # Convert Windows path to WSL/Docker format
@@ -21,7 +22,12 @@ Write-Host "Project path: $ProjectPath"
 
 # Check if .claude directory exists for session resumption
 $claudeArgs = "claude"
-if (-not $Fresh -and (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude")) {
+if ($Fresh) {
+    Write-Host "Starting fresh Claude session..."
+} elseif ($SelectConversation -and (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude")) {
+    $claudeArgs = "claude --resume"
+    Write-Host "Opening conversation selection menu..."
+} elseif (Test-Path "$($ProjectPath -replace '/c', 'C:' -replace '/', '\')\.claude") {
     $claudeArgs = "claude --continue || claude"
     Write-Host "Attempting to resume previous Claude session (will start fresh if no conversation found)..."
 } else {
