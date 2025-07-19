@@ -52,5 +52,6 @@ docker run -it --rm \
     --name "claude-$PROJECT_NAME-noports" \
     -v "$PROJECT_PATH:/workspace" \
     -v claude-config:/home/developer \
+    -v claude-npm-global:/usr/local/lib/node_modules \
     claude-sandbox-claude \
     bash -c "$CLAUDE_CMD"

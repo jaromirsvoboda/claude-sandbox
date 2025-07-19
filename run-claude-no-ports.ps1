@@ -1,6 +1,11 @@
 param(
-    [Parameter(Mandatory=$true)]
-    [string]$ProjectPath,
+    [Parameter(Mandatory=$trdocker run -it --rm `
+    --name "claude-$ProjectName-noports" `
+    -v "${ProjectPath}:/workspace" `
+    -v "claude-config:/home/developer/.config" `
+    -v "claude-npm-global:/usr/local/lib/node_modules" `
+    claude-sandbox-claude `
+    bash -c $claudeArgs    [string]$ProjectPath,
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
     [switch]$Fresh,

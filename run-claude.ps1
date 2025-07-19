@@ -1,6 +1,14 @@
 param(
-    [Parameter(Mandatory=$true)]
-    [string]$ProjectPath,
+    [Parameter(Mandatory=$truedocker run -it --rm `
+    --name "claude-$ProjectName" `
+    -v "${ProjectPath}:/workspace" `
+    -v "claude-config:/home/developer/.config" `
+    -v "claude-npm-global:/usr/local/lib/node_modules" `
+    -p "${Port1}:3000" `
+    -p "${Port2}:8080" `
+    -p "${Port3}:5000" `
+    claude-sandbox-claude `
+    bash -c $claudeArgsstring]$ProjectPath,
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
     [int]$Port1 = 3000,
