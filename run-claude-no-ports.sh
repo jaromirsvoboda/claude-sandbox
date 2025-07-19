@@ -42,7 +42,9 @@ else
 
         if [ -n "$IMAGE_CREATED" ] && [ -n "$DOCKERFILE_MODIFIED" ]; then
             # Convert Docker timestamp to seconds since epoch
-            IMAGE_CREATED_EPOCH=$(date -d "$IMAGE_CREATED" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "${IMAGE_CREATED%.*}" +%s 2>/dev/null)
+            # Remove microseconds from timestamp for better compatibility
+            IMAGE_CREATED_CLEAN=$(echo "$IMAGE_CREATED" | sed 's/\.[0-9]*Z$/Z/')
+            IMAGE_CREATED_EPOCH=$(date -d "$IMAGE_CREATED_CLEAN" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$IMAGE_CREATED_CLEAN" +%s 2>/dev/null)
 
             if [ -n "$IMAGE_CREATED_EPOCH" ] && [ "$DOCKERFILE_MODIFIED" -gt "$IMAGE_CREATED_EPOCH" ]; then
                 echo "Dockerfile modified since last build. Rebuilding claude-sandbox-claude..."
@@ -56,13 +58,15 @@ else
 fi
 
 if [ "$NEEDS_REBUILD" = true ]; then
+    # Change to script directory for Docker build context
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    cd "$SCRIPT_DIR"
+
     docker build -t claude-sandbox-claude .
     if [ $? -ne 0 ]; then
         echo "Docker build failed!" >&2
         exit 1
     fi
-fi
-    docker build -t claude-sandbox-claude .
 fi
 
 echo "Starting Claude sandbox for: $PROJECT_NAME (no ports)"

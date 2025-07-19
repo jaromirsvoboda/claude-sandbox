@@ -41,11 +41,17 @@ if (-not $imageExists) {
 }
 
 if ($needsRebuild) {
+    # Change to script directory for Docker build context
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    Push-Location $scriptDir
+
     docker build -t claude-sandbox-claude .
     if ($LASTEXITCODE -ne 0) {
+        Pop-Location
         Write-Error "Docker build failed!"
         exit 1
     }
+    Pop-Location
 }
 
 Write-Host "Starting Claude sandbox for: $ProjectName (no ports)"
