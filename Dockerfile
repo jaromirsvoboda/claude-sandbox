@@ -1,12 +1,10 @@
-FROM debian:bullseye-slim
+FROM python:3.12-slim
 
 # Install dependencies including newer Node.js
 RUN apt-get update && apt-get install -y \
     curl \
     git \
     build-essential \
-    python3 \
-    python3-pip \
     ca-certificates \
     gnupg \
     && mkdir -p /etc/apt/keyrings \

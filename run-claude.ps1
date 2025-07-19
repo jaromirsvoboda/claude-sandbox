@@ -1,14 +1,6 @@
 param(
-    [Parameter(Mandatory=$truedocker run -it --rm `
-    --name "claude-$ProjectName" `
-    -v "${ProjectPath}:/workspace" `
-    -v "claude-config:/home/developer/.config" `
-    -v "claude-npm-global:/usr/local/lib/node_modules" `
-    -p "${Port1}:3000" `
-    -p "${Port2}:8080" `
-    -p "${Port3}:5000" `
-    claude-sandbox-claude `
-    bash -c $claudeArgsstring]$ProjectPath,
+    [Parameter(Mandatory=$true)]
+    [string]$ProjectPath,
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
     [int]$Port1 = 3000,
@@ -16,14 +8,47 @@ param(
     [int]$Port3 = 5000,
     [switch]$Fresh,
     [switch]$SelectConversation
-)# Convert Windows path to WSL/Docker format
+)
+
+# Convert Windows path to WSL/Docker format
 $ProjectPath = $ProjectPath -replace '\\', '/' -replace '^([A-Z]):', '/c'
 
-# Check if Docker image exists, build if not
+# Smart auto-build logic: Check if image needs rebuilding
+$needsRebuild = $false
 $imageExists = docker image inspect claude-sandbox-claude 2>$null
+
 if (-not $imageExists) {
     Write-Host "Docker image not found. Building claude-sandbox-claude..."
+    $needsRebuild = $true
+} else {
+    # Check if Dockerfile is newer than the existing image
+    $dockerfilePath = "Dockerfile"
+    if (Test-Path $dockerfilePath) {
+        $dockerfileModified = (Get-Item $dockerfilePath).LastWriteTime
+
+        # Get image creation time
+        $imageCreated = docker image inspect claude-sandbox-claude --format='{{.Created}}' 2>$null
+        if ($imageCreated) {
+            try {
+                $imageCreatedTime = [DateTime]::Parse($imageCreated)
+                if ($dockerfileModified -gt $imageCreatedTime) {
+                    Write-Host "Dockerfile modified since last build. Rebuilding claude-sandbox-claude..."
+                    $needsRebuild = $true
+                }
+            } catch {
+                Write-Host "Could not parse image creation time. Rebuilding to be safe..."
+                $needsRebuild = $true
+            }
+        }
+    }
+}
+
+if ($needsRebuild) {
     docker build -t claude-sandbox-claude .
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Docker build failed!"
+        exit 1
+    }
 }
 
 Write-Host "Starting Claude sandbox for: $ProjectName"

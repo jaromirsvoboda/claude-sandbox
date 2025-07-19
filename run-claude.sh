@@ -19,10 +19,42 @@ if [[ "$2" == "--"* ]]; then
     RESUME_FLAG="$2"
 fi
 
-# Check if Docker image exists, build if not
+# Smart auto-build logic: Check if image needs rebuilding
+NEEDS_REBUILD=false
+
 if ! docker image inspect claude-sandbox-claude >/dev/null 2>&1; then
     echo "Docker image not found. Building claude-sandbox-claude..."
+    NEEDS_REBUILD=true
+else
+    # Check if Dockerfile is newer than the existing image
+    if [ -f "Dockerfile" ]; then
+        # Get Dockerfile modification time (seconds since epoch)
+        DOCKERFILE_MODIFIED=$(stat -c %Y Dockerfile 2>/dev/null || stat -f %m Dockerfile 2>/dev/null)
+
+        # Get image creation time
+        IMAGE_CREATED=$(docker image inspect claude-sandbox-claude --format='{{.Created}}' 2>/dev/null)
+
+        if [ -n "$IMAGE_CREATED" ] && [ -n "$DOCKERFILE_MODIFIED" ]; then
+            # Convert Docker timestamp to seconds since epoch
+            IMAGE_CREATED_EPOCH=$(date -d "$IMAGE_CREATED" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "${IMAGE_CREATED%.*}" +%s 2>/dev/null)
+
+            if [ -n "$IMAGE_CREATED_EPOCH" ] && [ "$DOCKERFILE_MODIFIED" -gt "$IMAGE_CREATED_EPOCH" ]; then
+                echo "Dockerfile modified since last build. Rebuilding claude-sandbox-claude..."
+                NEEDS_REBUILD=true
+            fi
+        else
+            echo "Could not compare timestamps. Rebuilding to be safe..."
+            NEEDS_REBUILD=true
+        fi
+    fi
+fi
+
+if [ "$NEEDS_REBUILD" = true ]; then
     docker build -t claude-sandbox-claude .
+    if [ $? -ne 0 ]; then
+        echo "Docker build failed!" >&2
+        exit 1
+    fi
 fi
 
 echo "Starting Claude sandbox for: $PROJECT_NAME"
