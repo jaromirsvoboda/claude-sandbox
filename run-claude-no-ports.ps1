@@ -74,8 +74,12 @@ if ($Fresh) {
 # Startup command that includes global setup
 $startupCmd = "source /home/developer/.claude-startup.sh 2>/dev/null || true; $claudeArgs"
 
+# Generate unique container name with timestamp
+$timestamp = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+$containerName = "claude-$ProjectName-noports-$timestamp"
+
 docker run -it --rm `
-    --name "claude-$ProjectName-noports" `
+    --name $containerName `
     -v "${ProjectPath}:/workspace" `
     -v "claude-config:/home/developer/.config" `
     -v "claude-npm-global:/usr/local/lib/node_modules" `

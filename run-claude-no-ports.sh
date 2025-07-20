@@ -89,8 +89,12 @@ fi
 # Startup command that includes global setup
 STARTUP_CMD="source /home/developer/.claude-startup.sh 2>/dev/null || true; $CLAUDE_CMD"
 
+# Generate unique container name with timestamp
+TIMESTAMP=$(date +%s)
+CONTAINER_NAME="claude-$PROJECT_NAME-noports-$TIMESTAMP"
+
 docker run -it --rm \
-    --name "claude-$PROJECT_NAME-noports" \
+    --name "$CONTAINER_NAME" \
     -v "$PROJECT_PATH:/workspace" \
     -v claude-config:/home/developer \
     -v claude-npm-global:/usr/local/lib/node_modules \
