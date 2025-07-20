@@ -19,6 +19,18 @@ RUN npm install -g @anthropic-ai/claude-code
 
 # Create a non-root user
 RUN useradd -m -s /bin/bash developer
-USER developer
 
+# Create global Claude configuration and instructions
+USER developer
+RUN mkdir -p /home/developer/.config/claude-code
+
+# Copy global Claude instructions and configuration files
+COPY --chown=developer:developer .claude-global-instructions.md /home/developer/.claude-global-instructions.md
+COPY --chown=developer:developer claude-code-settings.json /home/developer/.config/claude-code/settings.json
+COPY --chown=developer:developer claude-startup.sh /home/developer/.claude-startup.sh
+
+# Make startup script executable
+RUN chmod +x /home/developer/.claude-startup.sh
+
+USER developer
 WORKDIR /workspace

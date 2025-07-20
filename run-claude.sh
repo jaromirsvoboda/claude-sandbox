@@ -73,6 +73,9 @@ if [ "$RESUME_FLAG" = "--resume" ] || [ -d "$PROJECT_PATH/.claude" ]; then
     echo "Resuming previous Claude session..."
 fi
 
+# Startup command that includes global setup
+STARTUP_CMD="source /home/developer/.claude-startup.sh 2>/dev/null || true; $CLAUDE_CMD"
+
 docker run -it --rm \
     --name "claude-$PROJECT_NAME" \
     -v "$PROJECT_PATH:/workspace" \
@@ -82,4 +85,4 @@ docker run -it --rm \
     -p 8081:8080 \
     -p 5001:5000 \
     claude-sandbox-claude \
-    bash -c "$CLAUDE_CMD"
+    bash -c "$STARTUP_CMD"

@@ -71,9 +71,13 @@ if ($Fresh) {
     Write-Host "Starting fresh Claude session..."
 }
 
+# Startup command that includes global setup
+$startupCmd = "source /home/developer/.claude-startup.sh 2>/dev/null || true; $claudeArgs"
+
 docker run -it --rm `
     --name "claude-$ProjectName-noports" `
     -v "${ProjectPath}:/workspace" `
-    -v "claude-config:/home/developer" `
+    -v "claude-config:/home/developer/.config" `
+    -v "claude-npm-global:/usr/local/lib/node_modules" `
     claude-sandbox-claude `
-    bash -c $claudeArgs
+    bash -c $startupCmd

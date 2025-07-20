@@ -86,10 +86,13 @@ else
     echo "Starting fresh Claude session..."
 fi
 
+# Startup command that includes global setup
+STARTUP_CMD="source /home/developer/.claude-startup.sh 2>/dev/null || true; $CLAUDE_CMD"
+
 docker run -it --rm \
     --name "claude-$PROJECT_NAME-noports" \
     -v "$PROJECT_PATH:/workspace" \
     -v claude-config:/home/developer \
     -v claude-npm-global:/usr/local/lib/node_modules \
     claude-sandbox-claude \
-    bash -c "$CLAUDE_CMD"
+    bash -c "$STARTUP_CMD"

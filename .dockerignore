@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Documentation
+README.md
+
+# Scripts (only needed on host)
+run-claude.ps1
+run-claude.sh
+run-claude-no-ports.ps1
+run-claude-no-ports.sh
+
+# IDE
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Only include specific files we need in the image
+!.claude-global-instructions.md
+!claude-code-settings.json
+!claude-startup.sh
