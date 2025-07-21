@@ -32,26 +32,67 @@ if ! docker image inspect claude-sandbox-claude >/dev/null 2>&1; then
     echo "Docker image not found. Building claude-sandbox-claude..."
     NEEDS_REBUILD=true
 else
-    # Check if Dockerfile is newer than the existing image
+    # Dynamically find files that affect the Docker build
+    BUILD_FILES=("Dockerfile")  # Always include Dockerfile
+    
+    # Add files referenced in COPY commands in Dockerfile
     if [ -f "Dockerfile" ]; then
-        # Get Dockerfile modification time (seconds since epoch)
-        DOCKERFILE_MODIFIED=$(stat -c %Y Dockerfile 2>/dev/null || stat -f %m Dockerfile 2>/dev/null)
-
-        # Get image creation time
-        IMAGE_CREATED=$(docker image inspect claude-sandbox-claude --format='{{.Created}}' 2>/dev/null)
-
-        if [ -n "$IMAGE_CREATED" ] && [ -n "$DOCKERFILE_MODIFIED" ]; then
-            # Convert Docker timestamp to seconds since epoch
-            # Remove microseconds from timestamp for better compatibility
-            IMAGE_CREATED_CLEAN=$(echo "$IMAGE_CREATED" | sed 's/\.[0-9]*Z$/Z/')
-            IMAGE_CREATED_EPOCH=$(date -d "$IMAGE_CREATED_CLEAN" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$IMAGE_CREATED_CLEAN" +%s 2>/dev/null)
-
-            if [ -n "$IMAGE_CREATED_EPOCH" ] && [ "$DOCKERFILE_MODIFIED" -gt "$IMAGE_CREATED_EPOCH" ]; then
-                echo "Dockerfile modified since last build. Rebuilding claude-sandbox-claude..."
-                NEEDS_REBUILD=true
+        while IFS= read -r line; do
+            if [[ $line =~ ^[[:space:]]*COPY[[:space:]]+.*?([^[:space:]]+)[[:space:]]+ ]]; then
+                sourceFile="${BASH_REMATCH[1]}"
+                # Skip flags like --chown=user:group
+                if [[ ! $sourceFile =~ ^-- ]]; then
+                    BUILD_FILES+=("$sourceFile")
+                fi
             fi
+        done < "Dockerfile"
+    fi
+    
+    # Remove duplicates and ensure files exist
+    BUILD_FILES_FILTERED=()
+    for file in "${BUILD_FILES[@]}"; do
+        if [ -f "$file" ]; then
+            # Check if already in filtered list
+            inList=false
+            for existing in "${BUILD_FILES_FILTERED[@]}"; do
+                if [ "$existing" = "$file" ]; then
+                    inList=true
+                    break
+                fi
+            done
+            if [ "$inList" = false ]; then
+                BUILD_FILES_FILTERED+=("$file")
+            fi
+        fi
+    done
+    BUILD_FILES=("${BUILD_FILES_FILTERED[@]}")
+    
+    # Get image creation time
+    IMAGE_CREATED=$(docker image inspect claude-sandbox-claude --format='{{.Created}}' 2>/dev/null)
+    
+    if [ -n "$IMAGE_CREATED" ]; then
+        # Convert Docker timestamp to seconds since epoch
+        IMAGE_CREATED_CLEAN=$(echo "$IMAGE_CREATED" | sed 's/\.[0-9]*Z$/Z/')
+        IMAGE_CREATED_EPOCH=$(date -d "$IMAGE_CREATED_CLEAN" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$IMAGE_CREATED_CLEAN" +%s 2>/dev/null)
+        
+        if [ -n "$IMAGE_CREATED_EPOCH" ]; then
+            # Check if any build file is newer than the image
+            for file in "${BUILD_FILES[@]}"; do
+                if [ -f "$file" ]; then
+                    FILE_MODIFIED=$(stat -c %Y "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null)
+                    if [ -n "$FILE_MODIFIED" ] && [ "$FILE_MODIFIED" -gt "$IMAGE_CREATED_EPOCH" ]; then
+                        echo "$file modified since last build. Rebuilding claude-sandbox-claude..."
+                        NEEDS_REBUILD=true
+                        break
+                    fi
+                fi
+            done
         else
-            echo "Could not compare timestamps. Rebuilding to be safe..."
+            echo "Could not parse image timestamp. Rebuilding to be safe..."
+            NEEDS_REBUILD=true
+        fi
+    else
+        echo "Could not get image creation time. Rebuilding to be safe..."
             NEEDS_REBUILD=true
         fi
     fi

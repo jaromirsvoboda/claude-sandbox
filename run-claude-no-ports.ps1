@@ -18,25 +18,48 @@ if (-not $imageExists) {
     Write-Host "Docker image not found. Building claude-sandbox-claude..."
     $needsRebuild = $true
 } else {
-    # Check if Dockerfile is newer than the existing image
-    $dockerfilePath = "Dockerfile"
-    if (Test-Path $dockerfilePath) {
-        $dockerfileModified = (Get-Item $dockerfilePath).LastWriteTime
-
-        # Get image creation time
-        $imageCreated = docker image inspect claude-sandbox-claude --format='{{.Created}}' 2>$null
-        if ($imageCreated) {
-            try {
-                $imageCreatedTime = [DateTime]::Parse($imageCreated)
-                if ($dockerfileModified -gt $imageCreatedTime) {
-                    Write-Host "Dockerfile modified since last build. Rebuilding claude-sandbox-claude..."
-                    $needsRebuild = $true
+    # Dynamically find files that affect the Docker build
+    $buildFiles = @("Dockerfile")  # Always include Dockerfile
+    
+    # Add files referenced in COPY commands in Dockerfile
+    if (Test-Path "Dockerfile") {
+        $dockerfileContent = Get-Content "Dockerfile"
+        foreach ($line in $dockerfileContent) {
+            if ($line -match "^\s*COPY\s+.*?([^\s]+)\s+") {
+                $sourceFile = $matches[1]
+                # Skip flags like --chown=user:group
+                if (-not $sourceFile.StartsWith("--")) {
+                    $buildFiles += $sourceFile
                 }
-            } catch {
-                Write-Host "Could not parse image creation time. Rebuilding to be safe..."
-                $needsRebuild = $true
             }
         }
+    }
+    
+    # Remove duplicates and ensure files exist
+    $buildFiles = $buildFiles | Select-Object -Unique | Where-Object { Test-Path $_ }
+    
+    # Get image creation time
+    $imageCreated = docker image inspect claude-sandbox-claude --format='{{.Created}}' 2>$null
+    if ($imageCreated) {
+        try {
+            $imageCreatedTime = [DateTime]::Parse($imageCreated)
+            
+            # Check if any build file is newer than the image
+            foreach ($file in $buildFiles) {
+                $fileModified = (Get-Item $file).LastWriteTime
+                if ($fileModified -gt $imageCreatedTime) {
+                    Write-Host "$file modified since last build. Rebuilding claude-sandbox-claude..."
+                    $needsRebuild = $true
+                    break
+                }
+            }
+        } catch {
+            Write-Host "Could not parse image creation time. Rebuilding to be safe..."
+            $needsRebuild = $true
+        }
+    } else {
+        Write-Host "Could not get image creation time. Rebuilding to be safe..."
+        $needsRebuild = $true
     }
 }
 
