@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Load version information
+if [ -f /home/developer/VERSION ]; then
+    source /home/developer/VERSION
+else
+    CLAUDE_SANDBOX_VERSION="unknown"
+    CLAUDE_SANDBOX_BUILD_DATE="unknown"
+    CLAUDE_SANDBOX_FEATURES="basic functionality"
+fi
+
 # Ensure conversations directory exists in workspace
 mkdir -p /workspace/conversations
 
@@ -39,7 +48,9 @@ fi
 
 # Display instructions reminder
 echo "================================================================"
-echo "🔧 CLAUDE SANDBOX WITH GLOBAL DOCUMENTATION PROTOCOL ACTIVE"
+echo "🔧 CLAUDE SANDBOX ${CLAUDE_SANDBOX_VERSION} - GLOBAL DOCUMENTATION PROTOCOL"
+echo "Built: ${CLAUDE_SANDBOX_BUILD_DATE}"
+echo "Features: ${CLAUDE_SANDBOX_FEATURES}"
 echo "================================================================"
 echo ""
 echo "📋 REMINDER: You MUST follow these documentation rules:"

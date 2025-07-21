@@ -28,9 +28,12 @@ RUN mkdir -p /home/developer/.config/claude-code
 COPY --chown=developer:developer .claude-global-instructions.md /home/developer/.claude-global-instructions.md
 COPY --chown=developer:developer claude-code-settings.json /home/developer/.config/claude-code/settings.json
 COPY --chown=developer:developer claude-startup.sh /home/developer/.claude-startup.sh
+COPY --chown=developer:developer VERSION /home/developer/VERSION
+COPY --chown=developer:developer version.sh /home/developer/version.sh
 
 # Make startup script executable
 RUN chmod +x /home/developer/.claude-startup.sh
+RUN chmod +x /home/developer/version.sh
 
 USER developer
 WORKDIR /workspace
