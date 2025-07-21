@@ -3,5 +3,49 @@
   "auto_create_conversations_dir": true,
   "default_documentation_mode": true,
   "conversation_file_template": "conversations/{feature_name}.md",
-  "misc_changes_file": "conversations/misc_changes.md"
+  "misc_changes_file": "conversations/misc_changes.md",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write|CreateFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📋 Document this change in conversation files'"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '💭 Update conversation files with your thinking'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📝 Document this interaction + progress markers'"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🤖 Follow documentation protocol'"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -38,7 +38,29 @@ MISC_EOF
 fi
 
 # Display instructions reminder
-echo "🔧 Claude Sandbox with Global Documentation Protocol Active"
-echo "📁 Conversations directory: /workspace/conversations/"
-echo "📋 Global instructions: /home/developer/.claude-global-instructions.md"
+echo "================================================================"
+echo "🔧 CLAUDE SANDBOX WITH GLOBAL DOCUMENTATION PROTOCOL ACTIVE"
+echo "================================================================"
+echo ""
+echo "📋 REMINDER: You MUST follow these documentation rules:"
+echo "   1. Create conversation files for ALL substantial features"
+echo "      Format: conversations/[feature_name].md"
+echo "   2. Use status markers: ✅ Complete, 🔄 In Progress, ❌ Not Started"
+echo "   3. Document progress CONTINUOUSLY during implementation"
+echo "   4. Update status markers after each implementation step"
+echo "   5. Use conversations/misc_changes.md for smaller edits"
+echo ""
+echo "📁 File structure:"
+echo "   • Conversations directory: /workspace/conversations/"
+echo "   • Global instructions: /home/developer/.claude-global-instructions.md"
+echo "   • Project instructions: /workspace/CLAUDE.md"
+echo ""
+echo "⚠️  IMPORTANT: Start each session by acknowledging these rules!"
+echo "================================================================"
+echo ""
+
+# Final reminder hook for Claude
+echo "🤖 CLAUDE: Please start by confirming you understand and will follow"
+echo "    the documentation protocol shown above. Create conversation files"
+echo "    for substantial work and update progress markers continuously."
 echo ""
