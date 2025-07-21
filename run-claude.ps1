@@ -3,11 +3,9 @@ param(
     [string]$ProjectPath,
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
-    [int]$Port1 = 3000,
-    [int]$Port2 = 8080,
-    [int]$Port3 = 5000,
     [switch]$Fresh,
-    [switch]$SelectConversation
+    [switch]$SelectConversation,
+    [switch]$ForwardPorts
 )
 
 # Convert Windows path to WSL/Docker format
@@ -82,7 +80,6 @@ if ($needsRebuild) {
 
 Write-Host "Starting Claude sandbox for: $ProjectName"
 Write-Host "Project path: $ProjectPath"
-Write-Host "Ports: $Port1, $Port2, $Port3"
 
 # Check if .claude directory exists for session resumption
 $claudeArgs = "claude"
@@ -98,6 +95,13 @@ if ($Fresh) {
     Write-Host "Starting fresh Claude session..."
 }
 
+# Build port arguments conditionally
+$portArgs = @()
+if ($ForwardPorts) {
+    $portArgs = @("-p", "3001:3000", "-p", "8081:8080", "-p", "5001:5000")
+    Write-Host "Port forwarding enabled: 3001→3000, 8081→8080, 5001→5000"
+}
+
 # Startup command that includes global setup
 $startupCmd = "source /home/developer/.claude-startup.sh 2>/dev/null || true; $claudeArgs"
 
@@ -105,13 +109,15 @@ $startupCmd = "source /home/developer/.claude-startup.sh 2>/dev/null || true; $c
 $timestamp = [DateTimeOffset]::Now.ToUnixTimeSeconds()
 $containerName = "claude-$ProjectName-$timestamp"
 
-docker run -it --rm `
-    --name $containerName `
-    -v "${ProjectPath}:/workspace" `
-    -v "claude-config:/home/developer/.config" `
-    -v "claude-npm-global:/usr/local/lib/node_modules" `
-    -p "${Port1}:3000" `
-    -p "${Port2}:8080" `
-    -p "${Port3}:5000" `
-    claude-sandbox-claude `
-    bash -c $startupCmd
+$dockerArgs = @(
+    "run", "-it", "--rm",
+    "--name", $containerName,
+    "-v", "${ProjectPath}:/workspace",
+    "-v", "claude-config:/home/developer/.config",
+    "-v", "claude-npm-global:/usr/local/lib/node_modules"
+) + $portArgs + @(
+    "claude-sandbox-claude",
+    "bash", "-c", $startupCmd
+)
+
+& docker $dockerArgs

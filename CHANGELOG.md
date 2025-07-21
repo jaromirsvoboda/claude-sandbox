@@ -1,5 +1,20 @@
 # Claude Sandbox Changelog
 
+## v1.3.0 - 2025-07-21
+### Added
+- Dynamic file detection - automatically monitors files referenced in Dockerfile COPY commands
+- Flexible argument parsing supporting multiple flag combinations
+- Port forwarding control with `--forward-ports` / `-ForwardPorts` flag
+
+### Changed
+- **BREAKING**: Consolidated duplicate scripts - removed `run-claude-no-ports.*` variants
+- **BREAKING**: Default behavior now runs without port forwarding (more secure)
+- **BREAKING**: Flag renamed from `--redirect-ports` to `--forward-ports` for clarity
+- Improved maintainability with single codebase instead of duplicated logic
+
+### Removed
+- `run-claude-no-ports.sh` and `run-claude-no-ports.ps1` (functionality moved to main scripts)
+
 ## v1.2.0 - 2025-07-21
 ### Added
 - Documentation hooks for continuous reminder during development

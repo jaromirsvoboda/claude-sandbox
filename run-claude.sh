@@ -1,23 +1,44 @@
 #!/bin/bash
 
-# Usage: ./run-claude.sh /path/to/project [project-name] [--resume]
+# Usage: ./run-claude.sh /path/to/project [project-name] [--resume] [--forward-ports]
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <project-path> [project-name] [--resume]"
+    echo "Usage: $0 <project-path> [project-name] [--resume] [--forward-ports]"
     echo "Example: $0 /c/Projects/piper piper"
     echo "         $0 /c/Projects/piper piper --resume"
+    echo "         $0 /c/Projects/piper piper --forward-ports"
+    echo "         $0 /c/Projects/piper --resume --forward-ports"
     exit 1
 fi
 
 PROJECT_PATH="$1"
 PROJECT_NAME="${2:-$(basename "$PROJECT_PATH")}"
-RESUME_FLAG="$3"
 
-# Handle case where flag is in position 2 (no project name specified)
-if [[ "$2" == "--"* ]]; then
-    PROJECT_NAME="$(basename "$PROJECT_PATH")"
-    RESUME_FLAG="$2"
-fi
+# Parse all remaining arguments for flags
+RESUME_FLAG=""
+FORWARD_PORTS=false
+shift 2 2>/dev/null || shift 1  # Remove first two args, or just first if only one provided
+
+for arg in "$@"; do
+    case $arg in
+        --resume)
+            RESUME_FLAG="--resume"
+            ;;
+        --forward-ports)
+            FORWARD_PORTS=true
+            ;;
+        --*)
+            echo "Unknown flag: $arg" >&2
+            exit 1
+            ;;
+        *)
+            # If no project name was provided and this isn't a flag, treat as project name
+            if [[ "$PROJECT_NAME" == "$(basename "$PROJECT_PATH")" ]] && [[ ! "$arg" == "--"* ]]; then
+                PROJECT_NAME="$arg"
+            fi
+            ;;
+    esac
+done
 
 # Smart auto-build logic: Check if image needs rebuilding
 NEEDS_REBUILD=false
@@ -121,13 +142,18 @@ STARTUP_CMD="source /home/developer/.claude-startup.sh 2>/dev/null || true; $CLA
 TIMESTAMP=$(date +%s)
 CONTAINER_NAME="claude-$PROJECT_NAME-$TIMESTAMP"
 
+# Build port arguments conditionally
+PORT_ARGS=""
+if [ "$FORWARD_PORTS" = true ]; then
+    PORT_ARGS="-p 3001:3000 -p 8081:8080 -p 5001:5000"
+    echo "Port forwarding enabled: 3001→3000, 8081→8080, 5001→5000"
+fi
+
 docker run -it --rm \
     --name "$CONTAINER_NAME" \
     -v "$PROJECT_PATH:/workspace" \
     -v claude-config:/home/developer/.config \
     -v claude-npm-global:/usr/local/lib/node_modules \
-    -p 3001:3000 \
-    -p 8081:8080 \
-    -p 5001:5000 \
+    $PORT_ARGS \
     claude-sandbox-claude \
     bash -c "$STARTUP_CMD"

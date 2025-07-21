@@ -29,17 +29,8 @@ docker-compose build
 # With custom project name
 .\run-claude.ps1 -ProjectPath "C:\Projects\my-app" -ProjectName "my-app"
 
-# With custom ports
-.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Port1 3001 -Port2 8081 -Port3 5001
-
-# No ports version (resumes most recent conversation automatically)
-.\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper"
-
-# No ports version with fresh start
-.\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper" -Fresh
-
-# No ports version with conversation selection
-.\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper" -SelectConversation
+# With port forwarding enabled (default: no ports for security)
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -ForwardPorts
 ```
 
 **Bash (Linux/WSL/Git Bash):**
@@ -47,23 +38,17 @@ docker-compose build
 # Auto-builds image if needed (resumes most recent conversation automatically)
 ./run-claude.sh /mnt/c/Projects/piper
 
-# Start fresh session (ignore existing .claude directory)
-./run-claude.sh /mnt/c/Projects/piper piper --fresh
-
-# Select from available conversations interactively
-./run-claude.sh /mnt/c/Projects/piper piper --select-conversation
+# Resume previous session
+./run-claude.sh /mnt/c/Projects/piper piper --resume
 
 # With custom project name
 ./run-claude.sh /mnt/c/Projects/my-app my-app
 
-# No ports version (resumes most recent conversation automatically)
-./run-claude-no-ports.sh /mnt/c/Projects/piper
+# With port forwarding enabled (default: no ports for security)
+./run-claude.sh /mnt/c/Projects/piper piper --forward-ports
 
-# No ports version with fresh start
-./run-claude-no-ports.sh /mnt/c/Projects/piper piper --fresh
-
-# No ports version with conversation selection
-./run-claude-no-ports.sh /mnt/c/Projects/piper piper --select-conversation
+# Combined flags
+./run-claude.sh /mnt/c/Projects/piper --resume --forward-ports
 
 # Note: For WSL, use /mnt/c/ path format
 # For Git Bash, use /c/ path format
@@ -177,3 +162,18 @@ netstat -ano | findstr :3000
    ```
 
 4. **Ensure consistent container naming:** The scripts use consistent names (`claude-<project>`) to maintain the same volume across runs.
+
+## Changelog
+
+### v1.3.0 (2025-07-21)
+- **BREAKING CHANGE**: Consolidated duplicate scripts - removed `run-claude-no-ports.*` 
+- **NEW**: Single scripts with `--forward-ports` / `-ForwardPorts` flag (default: no ports for security)
+- **NEW**: Dynamic file detection - automatically detects files to monitor from Dockerfile COPY commands
+- **IMPROVED**: Better argument parsing with flexible flag combinations
+- **IMPROVED**: Maintainability - single codebase instead of duplicated scripts
+
+### v1.2.0 (2025-07-21)
+- Smart auto-rebuild based on file timestamps
+- Global documentation protocol with Claude Code hooks
+- Multi-instance container support with unique naming
+- Documentation hooks for conversation tracking
