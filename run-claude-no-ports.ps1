@@ -4,8 +4,7 @@ param(
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
     [switch]$Fresh,
-    [switch]$SelectConversation,
-    [switch]$ForwardPorts
+    [switch]$SelectConversation
 )
 
 # Convert Windows path to WSL/Docker format
@@ -26,10 +25,12 @@ if (-not $imageExists) {
     if (Test-Path "Dockerfile") {
         $dockerfileContent = Get-Content "Dockerfile"
         foreach ($line in $dockerfileContent) {
-            if ($line -match "^\s*COPY\s+(?:--\S+\s+)*([^\s]+)\s+") {
+            if ($line -match "^\s*COPY\s+.*?([^\s]+)\s+") {
                 $sourceFile = $matches[1]
-                # Skip flags like --chown=user:group (already handled by regex)
-                $buildFiles += $sourceFile
+                # Skip flags like --chown=user:group
+                if (-not $sourceFile.StartsWith("--")) {
+                    $buildFiles += $sourceFile
+                }
             }
         }
     }
@@ -76,7 +77,7 @@ if ($needsRebuild) {
     Pop-Location
 }
 
-Write-Host "Starting Claude sandbox for: $ProjectName"
+Write-Host "Starting Claude sandbox for: $ProjectName (no ports)"
 Write-Host "Project path: $ProjectPath"
 
 # Check if .claude directory exists for session resumption
@@ -93,28 +94,17 @@ if ($Fresh) {
     Write-Host "Starting fresh Claude session..."
 }
 
-# Build port arguments conditionally
-$portArgs = @()
-if ($ForwardPorts) {
-    $portArgs = @("-p", "3001:3000", "-p", "8081:8080", "-p", "5001:5000")
-    Write-Host "Port forwarding enabled: 3001→3000, 8081→8080, 5001→5000"
-}
-
 # Startup command that includes global setup
 $startupCmd = "source /home/developer/.claude-startup.sh 2>/dev/null || true; $claudeArgs"
 
-# Generate consistent container name for volume persistence
-$containerName = "claude-$ProjectName"
+# Generate unique container name with timestamp
+$timestamp = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+$containerName = "claude-$ProjectName-noports-$timestamp"
 
-$dockerArgs = @(
-    "run", "-it", "--rm",
-    "--name", $containerName,
-    "-v", "${ProjectPath}:/workspace",
-    "-v", "claude-config:/home/developer/.config",
-    "-v", "claude-npm-global:/usr/local/lib/node_modules"
-) + $portArgs + @(
-    "claude-sandbox-claude",
-    "bash", "-c", $startupCmd
-)
-
-& docker $dockerArgs
+docker run -it --rm `
+    --name $containerName `
+    -v "${ProjectPath}:/workspace" `
+    -v "claude-config:/home/developer/.config" `
+    -v "claude-npm-global:/usr/local/lib/node_modules" `
+    claude-sandbox-claude `
+    bash -c $startupCmd

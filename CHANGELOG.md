@@ -1,5 +1,16 @@
 # Claude Sandbox Changelog
 
+## v1.3.1 - 2025-07-22
+### Fixed
+- **CRITICAL**: Fixed auto-rebuild detection not working due to incorrect regex pattern for COPY commands with --chown flags
+- **CRITICAL**: Fixed session resumption fallback - now properly starts fresh when no conversations to resume
+- Fixed volume mount issue causing Claude Code configuration to be lost
+- Fixed container naming causing persistence issues (removed timestamps for consistent naming)
+
+### Changed
+- Improved regex pattern to properly parse Dockerfile COPY commands with flags
+- Enhanced startup script to restore Claude Code configuration if missing due to volume mount override
+
 ## v1.3.0 - 2025-07-21
 ### Added
 - Dynamic file detection - automatically monitors files referenced in Dockerfile COPY commands

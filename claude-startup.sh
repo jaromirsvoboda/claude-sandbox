@@ -1,5 +1,59 @@
 #!/bin/bash
 
+# Restore Claude Code configuration if it doesn't exist (volume mount issue)
+if [ ! -d /home/developer/.config/claude-code ]; then
+    echo "Initializing Claude Code configuration..."
+    mkdir -p /home/developer/.config/claude-code
+fi
+
+# Copy settings if missing (gets wiped by volume mount)
+if [ ! -f /home/developer/.config/claude-code/settings.json ]; then
+    echo "Restoring Claude Code settings..."
+    cat > /home/developer/.config/claude-code/settings.json << 'SETTINGS_EOF'
+{
+  "global_instructions_file": "/home/developer/.claude-global-instructions.md",
+  "auto_create_conversations_dir": true,
+  "default_documentation_mode": true,
+  "conversation_file_template": "conversations/{feature_name}.md",
+  "misc_changes_file": "conversations/misc_changes.md",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write|CreateFile",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📋 Document this change in conversation files'"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📚 Remember to document tool usage appropriately'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "echo '📝 Session ended - ensure documentation is complete'"
+      }
+    ],
+    "Notification": [
+      {
+        "type": "command",
+        "command": "echo '🔔 Documentation protocol active for this session'"
+      }
+    ]
+  }
+}
+SETTINGS_EOF
+fi
+
 # Load version information
 if [ -f /home/developer/VERSION ]; then
     source /home/developer/VERSION

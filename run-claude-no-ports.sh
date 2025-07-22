@@ -1,44 +1,29 @@
 #!/bin/bash
 
-# Usage: ./run-claude.sh /path/to/project [project-name] [--resume] [--forward-ports]
+# Usage: ./run-claude-no-ports.sh /path/to/project [project-name] [--fresh|--select-conversation]
+# This version doesn't expose any ports to avoid Windows/WSL port conflicts
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <project-path> [project-name] [--resume] [--forward-ports]"
-    echo "Example: $0 /c/Projects/piper piper"
-    echo "         $0 /c/Projects/piper piper --resume"
-    echo "         $0 /c/Projects/piper piper --forward-ports"
-    echo "         $0 /c/Projects/piper --resume --forward-ports"
+    echo "Usage: $0 <project-path> [project-name] [--fresh|--select-conversation]"
+    echo "       $0 <project-path> [--fresh|--select-conversation]"
+    echo "Example: $0 /mnt/c/Projects/piper"
+    echo "         $0 /mnt/c/Projects/piper --fresh"
+    echo "         $0 /mnt/c/Projects/piper --select-conversation"
+    echo "         $0 /mnt/c/Projects/piper my-project --fresh"
+    echo "Note: Resumes most recent conversation by default if .claude directory exists"
+    echo "Note: No ports exposed - use for file editing only"
     exit 1
 fi
 
 PROJECT_PATH="$1"
 PROJECT_NAME="${2:-$(basename "$PROJECT_PATH")}"
+FLAG="$3"
 
-# Parse all remaining arguments for flags
-RESUME_FLAG=""
-FORWARD_PORTS=false
-shift 2 2>/dev/null || shift 1  # Remove first two args, or just first if only one provided
-
-for arg in "$@"; do
-    case $arg in
-        --resume)
-            RESUME_FLAG="--resume"
-            ;;
-        --forward-ports)
-            FORWARD_PORTS=true
-            ;;
-        --*)
-            echo "Unknown flag: $arg" >&2
-            exit 1
-            ;;
-        *)
-            # If no project name was provided and this isn't a flag, treat as project name
-            if [[ "$PROJECT_NAME" == "$(basename "$PROJECT_PATH")" ]] && [[ ! "$arg" == "--"* ]]; then
-                PROJECT_NAME="$arg"
-            fi
-            ;;
-    esac
-done
+# Handle case where flag is in position 2 (no project name specified)
+if [[ "$2" == "--"* ]]; then
+    PROJECT_NAME="$(basename "$PROJECT_PATH")"
+    FLAG="$2"
+fi
 
 # Smart auto-build logic: Check if image needs rebuilding
 NEEDS_REBUILD=false
@@ -47,16 +32,18 @@ if ! docker image inspect claude-sandbox-claude >/dev/null 2>&1; then
     echo "Docker image not found. Building claude-sandbox-claude..."
     NEEDS_REBUILD=true
 else
-    # Files that affect the Docker build
     # Dynamically find files that affect the Docker build
     BUILD_FILES=("Dockerfile")  # Always include Dockerfile
 
     # Add files referenced in COPY commands in Dockerfile
     if [ -f "Dockerfile" ]; then
         while IFS= read -r line; do
-            if [[ $line =~ ^[[:space:]]*COPY[[:space:]]+(\-\-[^[:space:]]+[[:space:]]+)*([^[:space:]]+)[[:space:]]+ ]]; then
-                sourceFile="${BASH_REMATCH[2]}"
-                BUILD_FILES+=("$sourceFile")
+            if [[ $line =~ ^[[:space:]]*COPY[[:space:]]+.*?([^[:space:]]+)[[:space:]]+ ]]; then
+                sourceFile="${BASH_REMATCH[1]}"
+                # Skip flags like --chown=user:group
+                if [[ ! $sourceFile =~ ^-- ]]; then
+                    BUILD_FILES+=("$sourceFile")
+                fi
             fi
         done < "Dockerfile"
     fi
@@ -106,7 +93,8 @@ else
         fi
     else
         echo "Could not get image creation time. Rebuilding to be safe..."
-        NEEDS_REBUILD=true
+            NEEDS_REBUILD=true
+        fi
     fi
 fi
 
@@ -122,34 +110,34 @@ if [ "$NEEDS_REBUILD" = true ]; then
     fi
 fi
 
-echo "Starting Claude sandbox for: $PROJECT_NAME"
+echo "Starting Claude sandbox for: $PROJECT_NAME (no ports)"
 echo "Project path: $PROJECT_PATH"
 
 # Check if .claude directory exists for session resumption
 CLAUDE_CMD="claude"
-if [ "$RESUME_FLAG" = "--resume" ] || [ -d "$PROJECT_PATH/.claude" ]; then
-    CLAUDE_CMD="claude --resume || claude"
-    echo "Attempting to resume previous Claude session (will start fresh if no conversations found)..."
+if [ "$FLAG" = "--fresh" ]; then
+    echo "Starting fresh Claude session..."
+elif [ "$FLAG" = "--select-conversation" ] && [ -d "$PROJECT_PATH/.claude" ]; then
+    CLAUDE_CMD="claude --resume"
+    echo "Opening conversation selection menu..."
+elif [ "$FLAG" != "--fresh" ] && [ -d "$PROJECT_PATH/.claude" ]; then
+    CLAUDE_CMD="claude --continue || claude"
+    echo "Attempting to resume previous Claude session (will start fresh if no conversation found)..."
+else
+    echo "Starting fresh Claude session..."
 fi
 
 # Startup command that includes global setup
 STARTUP_CMD="source /home/developer/.claude-startup.sh 2>/dev/null || true; $CLAUDE_CMD"
 
-# Generate consistent container name for volume persistence
-CONTAINER_NAME="claude-$PROJECT_NAME"
-
-# Build port arguments conditionally
-PORT_ARGS=""
-if [ "$FORWARD_PORTS" = true ]; then
-    PORT_ARGS="-p 3001:3000 -p 8081:8080 -p 5001:5000"
-    echo "Port forwarding enabled: 3001→3000, 8081→8080, 5001→5000"
-fi
+# Generate unique container name with timestamp
+TIMESTAMP=$(date +%s)
+CONTAINER_NAME="claude-$PROJECT_NAME-noports-$TIMESTAMP"
 
 docker run -it --rm \
     --name "$CONTAINER_NAME" \
     -v "$PROJECT_PATH:/workspace" \
-    -v claude-config:/home/developer/.config \
+    -v claude-config:/home/developer \
     -v claude-npm-global:/usr/local/lib/node_modules \
-    $PORT_ARGS \
     claude-sandbox-claude \
     bash -c "$STARTUP_CMD"

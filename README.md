@@ -166,7 +166,7 @@ netstat -ano | findstr :3000
 ## Changelog
 
 ### v1.3.0 (2025-07-21)
-- **BREAKING CHANGE**: Consolidated duplicate scripts - removed `run-claude-no-ports.*` 
+- **BREAKING CHANGE**: Consolidated duplicate scripts - removed `run-claude-no-ports.*`
 - **NEW**: Single scripts with `--forward-ports` / `-ForwardPorts` flag (default: no ports for security)
 - **NEW**: Dynamic file detection - automatically detects files to monitor from Dockerfile COPY commands
 - **IMPROVED**: Better argument parsing with flexible flag combinations
