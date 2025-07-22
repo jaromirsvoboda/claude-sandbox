@@ -7,18 +7,23 @@ param(
     [int]$Port2 = 8080,
     [int]$Port3 = 5000,
     [switch]$Fresh,
-    [switch]$SelectConversation
+    [switch]$SelectConversation,
+    [string]$Instance = "default"
 )
 
 # Convert Windows path to WSL/Docker format
 $ProjectPath = $ProjectPath -replace '\\', '/' -replace '^([A-Z]):', '/c'
 
-# Display version information
+# Display version and instance information
 if (Test-Path "VERSION") {
     $versionContent = Get-Content "VERSION" | ForEach-Object {
         if ($_ -match "CLAUDE_SANDBOX_VERSION=(.+)") {
             $version = $matches[1]
-            Write-Host "🚀 Claude Sandbox $version - Starting..." -ForegroundColor Green
+            if ($Instance -eq "default") {
+                Write-Host "🚀 Claude Sandbox $version - Starting..." -ForegroundColor Green
+            } else {
+                Write-Host "🚀 Claude Sandbox $version [$Instance] - Starting..." -ForegroundColor Green
+            }
         }
     }
 }
@@ -70,6 +75,9 @@ if ($needsRebuild) {
 Write-Host "Starting Claude sandbox for: $ProjectName"
 Write-Host "Project path: $ProjectPath"
 Write-Host "Ports: $Port1, $Port2, $Port3"
+if ($Instance -ne "default") {
+    Write-Host "Instance: $Instance"
+}
 
 # Check if .claude directory exists for session resumption
 $claudeArgs = "claude"
@@ -88,10 +96,22 @@ if ($Fresh) {
 # Startup command that includes global setup
 $startupCmd = "source /home/developer/.claude-startup.sh 2>/dev/null || true; $claudeArgs"
 
+# Generate instance-specific container and volume names
+if ($Instance -eq "default") {
+    $containerName = "claude-$ProjectName"
+    $configVolume = "claude-config"
+} else {
+    $containerName = "claude-$ProjectName-$Instance"
+    $configVolume = "claude-config-$Instance"
+}
+
+Write-Host "Container: $containerName"
+Write-Host "Config volume: $configVolume"
+
 docker run -it --rm `
-    --name "claude-$ProjectName" `
+    --name $containerName `
     -v "${ProjectPath}:/workspace" `
-    -v "claude-config:/home/developer/.config" `
+    -v "${configVolume}:/home/developer/.config" `
     -v "claude-npm-global:/usr/local/lib/node_modules" `
     -p "${Port1}:3000" `
     -p "${Port2}:8080" `

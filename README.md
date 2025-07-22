@@ -31,6 +31,10 @@ docker-compose build
 # With custom project name
 .\run-claude.ps1 -ProjectPath "C:\Projects\my-app" -ProjectName "my-app"
 
+# Multi-instance support - run multiple Claude instances on same project
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Instance "feature-auth"
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Instance "alpha"
+
 # With custom ports
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Port1 3001 -Port2 8081 -Port3 5001
 
@@ -40,14 +44,31 @@ docker-compose build
 # No ports version with fresh start
 .\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper" -Fresh
 
-# No ports version with conversation selection
-.\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper" -SelectConversation
+# No ports version with named instance
+.\run-claude-no-ports.ps1 -ProjectPath "C:\Projects\piper" -Instance "beta"
 ```
 
 **Bash (Linux/WSL/Git Bash):**
 ```bash
 # Auto-builds image if needed (resumes most recent conversation automatically)
 ./run-claude.sh /mnt/c/Projects/piper
+
+# With resume flag
+./run-claude.sh /mnt/c/Projects/piper --resume
+
+# Multi-instance support - run multiple Claude instances on same project
+./run-claude.sh /mnt/c/Projects/piper --instance feature-auth
+./run-claude.sh /mnt/c/Projects/piper --instance alpha
+./run-claude.sh /mnt/c/Projects/piper piper --resume --instance beta
+
+# No ports version
+./run-claude-no-ports.sh /mnt/c/Projects/piper
+
+# No ports with fresh start
+./run-claude-no-ports.sh /mnt/c/Projects/piper --fresh
+
+# No ports with named instance
+./run-claude-no-ports.sh /mnt/c/Projects/piper --instance feature-ui
 
 # Start fresh session (ignore existing .claude directory)
 ./run-claude.sh /mnt/c/Projects/piper piper --fresh
@@ -134,6 +155,42 @@ Work on multiple projects simultaneously with different ports:
 # Project 2 (different ports)
 .\run-claude.ps1 -ProjectPath "C:\Projects\app2" -ProjectName "app2" -Port1 3001
 ```
+
+## Multi-Instance Support
+
+You can run multiple Claude instances on the same project simultaneously using named instances:
+
+**PowerShell:**
+
+```powershell
+# Default instance
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper"
+
+# Named instances for parallel development
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Instance "feature-auth"
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Instance "refactor"
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Instance "experiment"
+```
+
+**Bash:**
+
+```bash
+# Default instance
+./run-claude.sh /mnt/c/Projects/piper
+
+# Named instances for parallel development
+./run-claude.sh /mnt/c/Projects/piper --instance feature-auth
+./run-claude.sh /mnt/c/Projects/piper --instance refactor
+./run-claude.sh /mnt/c/Projects/piper --instance experiment
+```
+
+Each instance maintains its own:
+- Isolated conversation history
+- Separate Docker container
+- Independent configuration volume
+- Unique container naming (`claude-PROJECT-INSTANCE`)
+
+This allows you to work on different features, experiments, or approaches simultaneously without conversations interfering with each other.
 
 ## Troubleshooting
 

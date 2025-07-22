@@ -4,7 +4,8 @@ param(
 
     [string]$ProjectName = (Split-Path $ProjectPath -Leaf),
     [switch]$Fresh,
-    [switch]$SelectConversation
+    [switch]$SelectConversation,
+    [string]$Instance = "default"
 )
 
 # Convert Windows path to WSL/Docker format
@@ -15,7 +16,11 @@ if (Test-Path "VERSION") {
     $versionContent = Get-Content "VERSION" | ForEach-Object {
         if ($_ -match "CLAUDE_SANDBOX_VERSION=(.+)") {
             $version = $matches[1]
-            Write-Host "🚀 Claude Sandbox $version (No Ports) - Starting..." -ForegroundColor Green
+            if ($Instance -eq "default") {
+                Write-Host "🚀 Claude Sandbox $version (No Ports) - Starting..." -ForegroundColor Green
+            } else {
+                Write-Host "🚀 Claude Sandbox $version (No Ports) [$Instance] - Starting..." -ForegroundColor Green
+            }
         }
     }
 }
@@ -66,6 +71,9 @@ if ($needsRebuild) {
 
 Write-Host "Starting Claude sandbox for: $ProjectName (no ports)"
 Write-Host "Project path: $ProjectPath"
+if ($Instance -ne "default") {
+    Write-Host "Instance: $Instance"
+}
 
 # Check if .claude directory exists for session resumption
 $claudeArgs = "claude"
@@ -84,10 +92,22 @@ if ($Fresh) {
 # Startup command that includes global setup
 $startupCmd = "source /home/developer/.claude-startup.sh 2>/dev/null || true; $claudeArgs"
 
+# Generate instance-specific container and volume names
+if ($Instance -eq "default") {
+    $containerName = "claude-$ProjectName-noports"
+    $configVolume = "claude-config"
+} else {
+    $containerName = "claude-$ProjectName-noports-$Instance"
+    $configVolume = "claude-config-$Instance"
+}
+
+Write-Host "Container: $containerName"
+Write-Host "Config volume: $configVolume"
+
 docker run -it --rm `
-    --name "claude-$ProjectName-noports" `
+    --name $containerName `
     -v "${ProjectPath}:/workspace" `
-    -v "claude-config:/home/developer/.config" `
+    -v "${configVolume}:/home/developer/.config" `
     -v "claude-npm-global:/usr/local/lib/node_modules" `
     claude-sandbox-claude `
     bash -c $startupCmd

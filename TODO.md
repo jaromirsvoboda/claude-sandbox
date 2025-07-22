@@ -4,12 +4,18 @@ This file tracks planned features and improvements for the Claude Sandbox projec
 
 ## High Priority
 
-### Multi-Instance Support
+### Multi-Instance Support ✅
 - **Goal**: Allow running multiple instances of Claude on the same repository
 - **Implementation**: Manual container name handling (e.g., `--instance-name` or `--suffix` flag)
 - **Benefits**: Multiple developers can work on same project simultaneously
 - **Example**: `./run-claude.sh /path/to/project --instance dev1`
-- **Status**: Not started
+- **Status**: COMPLETED
+  - ✅ Bash scripts support `--instance` flag
+  - ✅ PowerShell scripts support `-Instance` parameter
+  - ✅ Isolated conversation history per instance
+  - ✅ Separate Docker containers per instance
+  - ✅ Independent configuration volumes
+  - ✅ Container naming: `claude-PROJECT-INSTANCE`
 
 ### Documentation Hooks
 - **Goal**: Automatically remind Claude to document changes according to best practices
