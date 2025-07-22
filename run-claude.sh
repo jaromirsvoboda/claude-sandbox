@@ -54,9 +54,17 @@ else
     # Add files referenced in COPY commands in Dockerfile
     if [ -f "Dockerfile" ]; then
         while IFS= read -r line; do
-            if [[ $line =~ ^[[:space:]]*COPY[[:space:]]+(\-\-[^[:space:]]+[[:space:]]+)*([^[:space:]]+)[[:space:]]+ ]]; then
-                sourceFile="${BASH_REMATCH[2]}"
-                BUILD_FILES+=("$sourceFile")
+            # Extract source file from COPY commands, handling --flags
+            if [[ $line =~ ^[[:space:]]*COPY[[:space:]] ]]; then
+                # Remove COPY and any leading whitespace
+                cleaned_line=$(echo "$line" | sed 's/^[[:space:]]*COPY[[:space:]]*//')
+                # Remove any --flags (anything starting with --)
+                cleaned_line=$(echo "$cleaned_line" | sed 's/--[^[:space:]]*[[:space:]]*//')
+                # Extract first word (source file)
+                sourceFile=$(echo "$cleaned_line" | awk '{print $1}')
+                if [ -n "$sourceFile" ]; then
+                    BUILD_FILES+=("$sourceFile")
+                fi
             fi
         done < "Dockerfile"
     fi
