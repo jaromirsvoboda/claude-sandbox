@@ -2,6 +2,8 @@
 
 Centralized Docker setup for running Claude Code safely in isolation while working on any project.
 
+**Current Version:** See `VERSION` file or run any script to see version information.
+
 ## Setup
 
 1. **The scripts will auto-build the container when needed**, but you can build manually:

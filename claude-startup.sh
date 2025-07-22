@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Display version information
+if [ -f /home/developer/version.sh ]; then
+    source /home/developer/version.sh
+fi
+
 # Ensure conversations directory exists in workspace
 mkdir -p /workspace/conversations
 

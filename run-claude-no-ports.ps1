@@ -10,6 +10,16 @@ param(
 # Convert Windows path to WSL/Docker format
 $ProjectPath = $ProjectPath -replace '\\', '/' -replace '^([A-Z]):', '/c'
 
+# Display version information
+if (Test-Path "VERSION") {
+    $versionContent = Get-Content "VERSION" | ForEach-Object {
+        if ($_ -match "CLAUDE_SANDBOX_VERSION=(.+)") {
+            $version = $matches[1]
+            Write-Host "🚀 Claude Sandbox $version (No Ports) - Starting..." -ForegroundColor Green
+        }
+    }
+}
+
 # Smart auto-build logic: Check if image needs rebuilding
 $needsRebuild = $false
 $imageExists = docker image inspect claude-sandbox-claude 2>$null

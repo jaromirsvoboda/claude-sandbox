@@ -19,6 +19,12 @@ if [[ "$2" == "--"* ]]; then
     RESUME_FLAG="$2"
 fi
 
+# Display version information
+if [ -f "VERSION" ]; then
+    source VERSION
+    echo "🚀 Claude Sandbox ${CLAUDE_SANDBOX_VERSION} - Starting..."
+fi
+
 # Smart auto-build logic: Check if image needs rebuilding
 NEEDS_REBUILD=false
 
