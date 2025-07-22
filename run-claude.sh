@@ -202,7 +202,21 @@ else
     echo "No ports exposed (secure mode)"
 fi
 
-echo ""
+# Check if container already exists
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    CONTAINER_STATUS=$(docker inspect --format='{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null)
+
+    if [ "$CONTAINER_STATUS" = "running" ]; then
+        echo "Container '$CONTAINER_NAME' is already running. Connecting to existing session..."
+        docker exec -it "$CONTAINER_NAME" bash -c "$STARTUP_CMD"
+        exit 0
+    else
+        echo "Starting stopped container '$CONTAINER_NAME'..."
+        docker start "$CONTAINER_NAME" >/dev/null
+        docker exec -it "$CONTAINER_NAME" bash -c "$STARTUP_CMD"
+        exit 0
+    fi
+fiecho ""
 echo "Press Enter to continue to Claude..."
 read -r
 

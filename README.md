@@ -218,6 +218,26 @@ This allows you to work on different features, experiments, or approaches simult
 
 ## Troubleshooting
 
+### Container Name Conflicts
+If you get "container name already in use" errors:
+
+**The scripts now handle this automatically** by detecting existing containers:
+
+- **Running container**: Automatically connects to your existing session
+- **Stopped container**: Automatically starts it and connects to your session
+
+**Manual cleanup (if needed):**
+```bash
+# List all Claude containers
+docker ps -a --filter "name=claude-*"
+
+# Force remove specific container
+docker rm -f claude-piper-noports
+
+# Remove all stopped Claude containers
+docker container prune --filter "label=claude-sandbox"
+```
+
 ### Port conflicts
 If you get "port not available" errors:
 

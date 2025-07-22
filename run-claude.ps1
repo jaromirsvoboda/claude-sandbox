@@ -134,7 +134,23 @@ if ($ForwardPorts) {
     Write-Host "No ports exposed (secure mode)"
 }
 
-Write-Host ""
+# Check if container already exists
+$existingContainer = docker ps -a --format '{{.Names}}' | Where-Object { $_ -eq $containerName }
+
+if ($existingContainer) {
+    $containerStatus = docker inspect --format='{{.State.Status}}' $containerName 2>$null
+
+    if ($containerStatus -eq "running") {
+        Write-Host "Container '$containerName' is already running. Connecting to existing session..." -ForegroundColor Yellow
+        docker exec -it $containerName bash -c $startupCmd
+        exit 0
+    } else {
+        Write-Host "Starting stopped container '$containerName'..." -ForegroundColor Yellow
+        docker start $containerName | Out-Null
+        docker exec -it $containerName bash -c $startupCmd
+        exit 0
+    }
+}Write-Host ""
 Write-Host "Press Enter to continue to Claude..." -ForegroundColor Yellow
 Read-Host
 
