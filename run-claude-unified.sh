@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Claude Sandbox launcher
-# Usage: ./run-claude.sh <project-path> [project-name] [flags...]
+# Unified Claude Sandbox launcher
+# Usage: ./run-claude-unified.sh <project-path> [project-name] [flags...]
 
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <project-path> [project-name] [flags...]"
@@ -195,26 +195,15 @@ fi
 echo "Container: $CONTAINER_NAME"
 echo "Config volume: $CONFIG_VOLUME"
 
-# Show port information before the pause
-if [ "$FORWARD_PORTS" = true ]; then
-    echo "Port forwarding: 3001→3000, 8081→8080, 5001→5000"
-else
-    echo "No ports exposed (secure mode)"
-fi
-
-echo ""
-echo "Press Enter to continue to Claude..."
-read -r
-
 # Build Docker command
 DOCKER_CMD="docker run -it --rm --name \"$CONTAINER_NAME\" -v \"$PROJECT_PATH:/workspace\" -v \"$CONFIG_VOLUME:/home/developer/.config\" -v claude-npm-global:/usr/local/lib/node_modules"
 
 # Add port forwarding if requested
 if [ "$FORWARD_PORTS" = true ]; then
     DOCKER_CMD="$DOCKER_CMD -p 3001:3000 -p 8081:8080 -p 5001:5000"
+    echo "Port forwarding: 3001→3000, 8081→8080, 5001→5000"
 else
-    # No ports to add
-    :
+    echo "No ports exposed (secure mode)"
 fi
 
 # Complete the command

@@ -127,17 +127,6 @@ if ($Instance -eq "default") {
 Write-Host "Container: $containerName"
 Write-Host "Config volume: $configVolume"
 
-# Show port information before the pause
-if ($ForwardPorts) {
-    Write-Host "Port forwarding: $Port1→3000, $Port2→8080, $Port3→5000"
-} else {
-    Write-Host "No ports exposed (secure mode)"
-}
-
-Write-Host ""
-Write-Host "Press Enter to continue to Claude..." -ForegroundColor Yellow
-Read-Host
-
 # Build Docker run command
 $dockerArgs = @(
     "run", "-it", "--rm",
@@ -154,7 +143,12 @@ if ($ForwardPorts) {
         "-p", "$Port2" + ":8080",
         "-p", "$Port3" + ":5000"
     )
-}# Complete the command
+    Write-Host "Port forwarding: $Port1→3000, $Port2→8080, $Port3→5000"
+} else {
+    Write-Host "No ports exposed (secure mode)"
+}
+
+# Complete the command
 $startupCmd = "source /home/developer/.claude-startup.sh 2>/dev/null || true; $claudeCmd"
 $dockerArgs += @("claude-sandbox-claude", "bash", "-c", $startupCmd)
 

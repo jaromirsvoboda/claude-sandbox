@@ -35,7 +35,7 @@ This file tracks planned features and improvements for the Claude Sandbox projec
 - **Benefits**: Ensures container always reflects latest changes
 - **Status**: Not started
 
-### Script Unification
+### Script Unification ✅
 - **Goal**: Merge `run-claude.sh` and `run-claude-no-ports.sh` into single script
 - **Implementation**: Add `--forward-ports` flag (default: no ports exposed)
 - **Benefits**:
@@ -43,7 +43,13 @@ This file tracks planned features and improvements for the Claude Sandbox projec
   - More secure default (no ports)
   - Cleaner user experience
 - **Breaking Change**: Default behavior will change to no port forwarding
-- **Status**: Not started
+- **Status**: COMPLETED
+  - ✅ Created `run-claude-unified.sh` with `--forward-ports` flag
+  - ✅ Created `run-claude-unified.ps1` with `-ForwardPorts` parameter
+  - ✅ Secure default: no ports exposed unless explicitly requested
+  - ✅ All existing functionality preserved (fresh, resume, instance support)
+  - ✅ Updated README with unified script documentation
+  - 🔄 Legacy scripts maintained for backward compatibility
 
 ## Low Priority
 
@@ -76,3 +82,5 @@ This file tracks planned features and improvements for the Claude Sandbox projec
 ✅ **Working Persistence** - Conversations and auth persist across runs
 ✅ **Basic Auto-Rebuild** - Rebuilds when Dockerfile changes
 ✅ **Global Configuration** - Consistent Claude behavior across projects
+✅ **Multi-Instance Support** - Named instances for parallel development
+✅ **Script Unification** - Unified scripts with secure defaults (no ports unless requested)

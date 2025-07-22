@@ -15,18 +15,42 @@ docker-compose build
 
 ## Usage
 
-### Simple CLI approach (Recommended)
+**Secure by default:** The scripts don't expose ports unless explicitly requested with `--forward-ports` flag.
 
 **PowerShell (Windows):**
 ```powershell
-# Auto-builds image if needed (resumes most recent conversation automatically)
+# Basic usage (no ports exposed - secure default)
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper"
 
-# Start fresh session (ignore existing .claude directory)
+# With port forwarding for web apps
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -ForwardPorts
+
+# Fresh session (ignore existing .claude directory)
 .\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Fresh
 
-# Select from available conversations interactively
-.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -SelectConversation
+# Multi-instance support
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Instance "feature-auth"
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -Instance "alpha" -ForwardPorts
+
+# Custom ports (only with ForwardPorts)
+.\run-claude.ps1 -ProjectPath "C:\Projects\piper" -ForwardPorts -Port1 3001 -Port2 8081 -Port3 5001
+```
+
+**Bash (Linux/WSL/Git Bash):**
+```bash
+# Basic usage (no ports exposed - secure default)
+./run-claude.sh /mnt/c/Projects/piper
+
+# With port forwarding for web apps
+./run-claude.sh /mnt/c/Projects/piper --forward-ports
+
+# Fresh session
+./run-claude.sh /mnt/c/Projects/piper --fresh
+
+# Multi-instance support
+./run-claude.sh /mnt/c/Projects/piper --instance feature-auth
+./run-claude.sh /mnt/c/Projects/piper --instance alpha --forward-ports
+```
 
 # With custom project name
 .\run-claude.ps1 -ProjectPath "C:\Projects\my-app" -ProjectName "my-app"
