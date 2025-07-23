@@ -216,7 +216,9 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         docker exec -it "$CONTAINER_NAME" bash -c "$STARTUP_CMD"
         exit 0
     fi
-fiecho ""
+fi
+
+echo ""
 echo "Press Enter to continue to Claude..."
 read -r
 
