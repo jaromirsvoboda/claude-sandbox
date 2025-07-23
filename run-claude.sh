@@ -223,7 +223,7 @@ echo "Press Enter to continue to Claude..."
 read -r
 
 # Build Docker command
-DOCKER_CMD="docker run -it --rm --name \"$CONTAINER_NAME\" -v \"$PROJECT_PATH:/workspace\" -v \"$CONFIG_VOLUME:/home/developer/.config\" -v claude-npm-global:/usr/local/lib/node_modules"
+DOCKER_CMD="docker run -it --name \"$CONTAINER_NAME\" -v \"$PROJECT_PATH:/workspace\" -v \"$CONFIG_VOLUME:/home/developer/.config\" -v claude-npm-global:/usr/local/lib/node_modules"
 
 # Add port forwarding if requested
 if [ "$FORWARD_PORTS" = true ]; then

@@ -156,7 +156,7 @@ Read-Host
 
 # Build Docker run command
 $dockerArgs = @(
-    "run", "-it", "--rm",
+    "run", "-it",
     "--name", $containerName,
     "-v", "$ProjectPath" + ":/workspace",
     "-v", "$configVolume" + ":/home/developer/.config",

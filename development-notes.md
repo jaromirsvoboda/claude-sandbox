@@ -261,27 +261,67 @@ Could isolate authentication per project:
 ### Export/Import Functionality
 Could add scripts to export/import specific conversations for sharing.
 
-## Version History
+## Version History & Semantic Versioning
 
-### v1.0 - Initial Setup
+We follow **Semantic Versioning (SemVer)**: `MAJOR.MINOR.PATCH`
+
+- **MAJOR**: Breaking changes that require user action
+- **MINOR**: New features (backward compatible)
+- **PATCH**: Bug fixes (backward compatible)
+
+### Version Timeline
+
+#### v1.0 - Initial Setup
 - Basic Docker container with Claude Code
 - Simple run scripts
 
-### v1.1 - Authentication Fix
+#### v1.1 - Authentication Fix
 - Fixed persistent authentication by mounting full home directory
 - Resolved re-authentication issues
 
-### v1.2 - Session Management
+#### v1.2 - Session Management
 - Added resume functionality with fallback
 - Three modes: auto-resume, select, fresh
 
-### v1.3 - Argument Parsing
+#### v1.3 - Argument Parsing
 - Fixed flag detection in bash scripts
 - Improved usage examples
 
-### v1.4 - Line Endings
+#### v1.4 - Line Endings
 - Fixed WSL compatibility with dos2unix
 - Resolved bash syntax errors
+
+#### v1.5.0 - Multi-Instance Support
+- Named instances for parallel development (`--instance` flag)
+- Isolated conversation history per instance
+- Instance-specific container and volume naming
+
+#### v1.6.0 - Script Unification
+- **MAJOR CHANGE**: Unified scripts with secure defaults (no ports unless `--forward-ports`)
+- Replaced 4 scripts with 2 unified scripts
+- Simplified user experience with consistent flag patterns
+
+#### v1.6.1 - Container Persistence Fix
+- **CRITICAL BUG FIX**: Removed `--rm` flag that was destroying persistence
+- Fixed authentication and conversation history persistence
+- Container state management improvements
+
+### Future Versioning Guidelines
+
+**For PATCH releases (x.x.+1)**:
+- Bug fixes that don't change functionality
+- Documentation updates
+- Performance improvements without API changes
+
+**For MINOR releases (x.+1.0)**:
+- New features that don't break existing usage
+- New command-line flags or options
+- Additional functionality
+
+**For MAJOR releases (+1.0.0)**:
+- Breaking changes to command-line interface
+- Removal of existing features
+- Changes that require user action to continue working
 
 ## Development Environment
 
@@ -292,6 +332,139 @@ Could add scripts to export/import specific conversations for sharing.
   - WSL: `/mnt/c/Projects/`
   - Git Bash: `/c/Projects/`
   - Windows: `C:\Projects\`
+
+## Critical Knowledge for Future Development
+
+### Most Common Gotchas
+
+1. **The `--rm` Flag Trap**: Never use `--rm` in docker run commands - it destroys persistence
+2. **Line Endings**: Always run `wsl dos2unix *.sh` after editing bash scripts on Windows
+3. **Volume vs Mount**: Authentication MUST be in Docker volume, not project mount for performance
+4. **Container Naming**: `noports` suffix is crucial for distinguishing port/no-port containers
+
+### Architecture Decisions That Matter
+
+#### Storage Strategy (DO NOT CHANGE)
+```bash
+# Authentication & conversations - Docker volume (fast, private)
+-v "claude-config:/home/developer/.config"
+
+# Project files - Direct mount (shareable, version controlled)
+-v "$PROJECT_PATH:/workspace"
+```
+
+**Why**: Tried storing everything in project directory - too slow, privacy issues, git bloat.
+
+#### Container Persistence Strategy
+- **DO**: Use named containers without `--rm` for session continuity
+- **DON'T**: Use `--rm` flag (destroys all persistence)
+- **Pattern**: Check existing → connect to running → start stopped → create new
+
+#### Multi-Instance Implementation
+```bash
+# Default instance
+CONFIG_VOLUME="claude-config"
+CONTAINER_NAME="claude-$PROJECT_NAME-noports"
+
+# Named instance
+CONFIG_VOLUME="claude-config-$INSTANCE_NAME"
+CONTAINER_NAME="claude-$PROJECT_NAME-noports-$INSTANCE_NAME"
+```
+
+### Current Pain Points & Solutions
+
+#### 1. Docker Access from PowerShell
+**Problem**: PowerShell can't access Docker directly in WSL setup
+**Solution**: Use `wsl -e docker` commands for diagnostics
+```powershell
+wsl -e docker ps -a --filter "name=claude"
+wsl -e docker volume ls
+```
+
+#### 2. Path Format Confusion
+**WSL paths**: `/mnt/c/Projects/piper`
+**Git Bash paths**: `/c/Projects/piper`
+**Windows paths**: `C:\Projects\piper`
+
+**Script handling**: Convert in PowerShell script:
+```powershell
+$ProjectPath = $ProjectPath -replace '\\', '/' -replace '^([A-Z]):', '/c'
+```
+
+#### 3. Container State Management
+**Pattern used**:
+1. Check if container exists (`docker ps -a --format '{{.Names}}'`)
+2. If running → connect (`docker exec -it`)
+3. If stopped → start and connect (`docker start` then `docker exec -it`)
+4. If none → create new (`docker run`)
+
+### Testing Checklist for Changes
+
+Before releasing any changes, test:
+
+1. **Fresh installation** (no existing containers/volumes)
+2. **Resume functionality** (existing container running)
+3. **Restart functionality** (existing container stopped)
+4. **Multi-instance isolation** (verify separate volumes)
+5. **Both WSL and PowerShell** (different path formats)
+6. **Port forwarding** (with and without `--forward-ports`)
+
+### Common Development Commands
+
+```bash
+# Check container state
+wsl -e docker ps -a --filter "name=claude"
+
+# Check volumes
+wsl -e docker volume ls | grep claude
+
+# Inspect volume contents
+wsl -e docker run --rm -v claude-config:/data busybox ls -la /data
+
+# Clean slate for testing
+wsl -e docker rm -f $(docker ps -aq --filter "name=claude")
+wsl -e docker volume rm $(docker volume ls -q --filter "name=claude")
+
+# Test script syntax
+wsl bash -n run-claude.sh
+
+# Convert line endings
+wsl dos2unix run-claude.sh
+```
+
+### Debugging User Issues
+
+#### "Authentication not persisting"
+1. Check if using `--rm` flag (removes containers)
+2. Verify volume mounting: `docker inspect CONTAINER_NAME | grep Mounts`
+3. Check volume exists: `docker volume ls | grep claude-config`
+
+#### "Container name conflicts"
+1. Check existing containers: `docker ps -a --filter "name=claude"`
+2. Verify container state management logic in scripts
+3. Test with both running and stopped containers
+
+#### "Scripts not working in WSL"
+1. Check line endings: `file run-claude.sh` (should show Unix endings)
+2. Run `dos2unix run-claude.sh`
+3. Check execute permissions: `chmod +x run-claude.sh`
+
+### File Editing Guidelines
+
+#### When editing bash scripts:
+1. **Always** run `wsl dos2unix script.sh` after editing
+2. Test syntax: `wsl bash -n script.sh`
+3. Test both WSL and Git Bash environments
+
+#### When changing Docker commands:
+1. **Never** add `--rm` flag
+2. Always test container persistence
+3. Verify volume mounts with `docker inspect`
+
+#### When changing version:
+1. Follow SemVer: `MAJOR.MINOR.PATCH`
+2. Update `VERSION` file
+3. Document changes in development notes
 
 ## Contact & Continuation
 
