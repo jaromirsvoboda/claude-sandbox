@@ -212,9 +212,10 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         docker exec -it "$CONTAINER_NAME" bash -c "$STARTUP_CMD"
         exit 0
     else
-        echo "Container '$CONTAINER_NAME' is stopped. Removing and recreating to ensure a working session..."
-        docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1
-        # Continue to docker run below (preserves config volume)
+        echo "Starting stopped container '$CONTAINER_NAME'..."
+        docker start "$CONTAINER_NAME" >/dev/null
+        docker exec -it "$CONTAINER_NAME" bash -c "$STARTUP_CMD"
+        exit 0
     fi
 fi
 
